@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout">
+<head>
+<title>Layout</title>
+<link rel="stylesheet" th:href="@{/css/bootstrap.min.css}"
+	href="../../css/bootstrap.min.css" />
+</head>
+<body>
+	<div class="container">
+		<div class="navbar">
+			<div class="navbar">
+			<div class="navbar-inner">
+				<a class="brand">Activiti Sample - Donation </a>
+				<div class="row">
+				<div class="span3" th:unless="${session == null or session.user == null or session.user.name == null}">
+					<a class="btn btn-large btn-info" th:href="@{/admin/logout}" href="#" 
+						  th:text="${session.user.name == null ? '' : ' User: ' + session.user.name + ' (Logout) '}" >Logout</a>
+				</div>
+				</div>
+			</div>
+		</div>
+		</div>
+		<h1 layout:fragment="header">Layout</h1>
+		<div layout:fragment="content">Fake content</div>
+	</div>
+</body>
+</html>

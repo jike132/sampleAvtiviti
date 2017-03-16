@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Donation Workflow Sample</title>
+</head>
+<body>
+	<h1 layout:fragment="header" th:text="|View all tasks: ${session.user.name}|">View all task: Tony</h1>
+	<div layout:fragment="content" class="container">
+		<div class="pull-right">
+			<a href="#" th:href="@{/mvc/start/donation}">Start Task</a>
+		</div>
+		
+		<div>
+			<h3>Donation List</h3>
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<td>ID</td>
+						<td>Fill Donation Form</td>
+						<td>Stop</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:if="${#lists.isEmpty(donations)}">
+						<td colspan="3">No messages</td>
+					</tr>
+					<tr th:each="id : ${donations}">
+						<td th:text="${id}">1</td>
+						<td th:button="input"><a href="donation.html" th:href="@{'/mvc/donation/' + ${id}}">input</a></td>
+						<td><a href="#" th:href="@{'/mvc/stop/' + ${id}}"> stop </a></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		
+		<div>
+			<h3>Approve List</h3>
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<td>ID</td>
+						<td>Approve ?</td>
+						<td>Stop</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:if="${#lists.isEmpty(approves)}">
+						<td colspan="3">No Approves</td>
+					</tr>
+					<tr th:each="id : ${approves}">
+						<td th:text="${id}">1</td>
+						<td th:button="input"><a href="approve.html" th:href="@{'/mvc/approve/' + ${id}}">form</a></td>
+						<td><a href="#" th:href="@{'/mvc/stop/' + ${id}}"> stop </a></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		
+		<div>
+			<h3>Second Approve List</h3>
+			<table class="table table-bordered table-striped">
+				<thead>
+					<tr>
+						<td>ID</td>
+						<td>Second Approve ?</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:if="${#lists.isEmpty(seconds)}">
+						<td colspan="3">No Second Approves</td>
+					</tr>
+					<tr th:each="id : ${seconds}">
+						<td th:text="${id}">1</td>
+						<td th:button="input"><a href="second.html" th:href="@{'/mvc/second/' + ${id}}">form</a></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div>
+			<h3>History</h3>
+			<table class="table table-bordered table-striped">
+				<tr th:each="his : ${allHistory}">
+					<td th:text="*{his}">asdasdf</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div>
+			<h3>Email</h3>
+			<table class="table table-bordered table-striped">
+				<tr th:each="email : ${emails}">
+					<td th:text="*{email}">email</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	
+</body>
+</html>

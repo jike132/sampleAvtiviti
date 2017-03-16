@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Login</title>
+</head>
+<body>
+	<h1 layout:fragment="header">Login</h1>
+	<div layout:fragment="content" class="container">
+		<form id="login" th:action="@{/admin/processLogin}"
+			th:object="${user}" action="#" method="post">
+
+			<div class="pull-right">
+				<a th:href="@{/admin/logout}" href="login.html"> Logout </a>
+			</div>
+
+			<label for="text">User Name</label> <select th:field="*{name}">
+				<option th:each="approver : ${allApproveres}"
+					th:value="${approver.name}" th:text="${approver.name}">user</option>
+			</select>
+
+
+			<div class="form-actions">
+				<input type="submit" value="Login" />
+			</div>
+		</form>
+	</div>
+</body>
+</html>

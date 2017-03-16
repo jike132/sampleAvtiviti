@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Donation Submission Form</title>
+</head>
+<body>
+	<h1 layout:fragment="header">Donation Submission From</h1>
+	<div layout:fragment="content" class="container">
+		<hr/>
+		<form id="doantionForm" th:action="@{/mvc/processDonation}" th:object="${donation}"
+			action="#" method="post">
+			<div th:if="${#fields.hasErrors('*')}" class="alert alert-error">
+				<p th:each="error : ${#fields.errors('*')}" th:text="${error}">
+					Validation error</p>
+			</div>
+			<div class="pull-right">
+				<a th:href="@{/mvc/list}" href="list.html"> Task List </a>
+			</div>
+ 			<input type="hidden" th:field="*{id}" />
+ 			<label for="text">User</label> 
+ 			<input type="text" th:field="*{name}" readonly="readonly" />
+			<label for="text">Amt</label> 
+			<input type="number" th:field="*{amt}"
+				th:class="${#fields.hasErrors('amt')} ? 'field-error'" />
+			<label for="text">Date</label>
+			<input type="date" th:field="*{date}"
+				th:class="${#fields.hasErrors('date')} ? 'field-error'" />
+			
+			<label for="text">Assign Approver</label>
+			<select th:field="*{approver}">
+				<option th:each="approver : ${allApproveres}"
+						th:value="${approver.name}"
+						th:text="${approver.name}">asaas</option>
+			</select>
+			
+			<div class="form-actions">
+				<input type="submit" value="Submission" />
+			</div>
+		</form>
+	</div>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.activiti.org/test">
+  <message id="login" name="login_message"></message>
+  <process id="donation" name="Donation" isExecutable="true">
+    <extensionElements>
+      <activiti:eventListener class="com.hkust.TaskAssignListener" entityType="task"></activiti:eventListener>
+    </extensionElements>
+    <startEvent id="start1" name="Start">
+      <extensionElements>
+        <activiti:executionListener event="start" expression="${BPMService.log(&quot;start process&quot;)}"></activiti:executionListener>
+      </extensionElements>
+    </startEvent>
+    <userTask id="Donation" name="Donation Form" activiti:assignee="${starter}">
+      <extensionElements>
+        <activiti:taskListener event="complete" expression="${donation.setApprover(approver)}"></activiti:taskListener>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow1" sourceRef="start1" targetRef="Donation"></sequenceFlow>
+    <userTask id="Approve" name="Approve Form" activiti:assignee="${donation.approver}">
+      <extensionElements>
+        <activiti:formProperty id="result" name="Result" type="string" expression="${result}" variable="result" required="true"></activiti:formProperty>
+        <activiti:formProperty id="dept" name="Dept" type="string" expression="${donation.dept}" required="true"></activiti:formProperty>
+        <activiti:taskListener event="create" expression="${BPMService.log(donation.getApprover())}"></activiti:taskListener>
+        <activiti:taskListener event="create" expression="${BPMService.log(donation.getDate())}"></activiti:taskListener>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="flow2" sourceRef="Donation" targetRef="Approve"></sequenceFlow>
+    <userTask id="Second" name="Second Form" activiti:assignee="${super}">
+      <multiInstanceLoopCharacteristics isSequential="false" activiti:collection="${BPMService.getDeptUsers(donation.dept)}" activiti:elementVariable="super">
+        <completionCondition>${signComplete.isComplete(execution)}</completionCondition>
+      </multiInstanceLoopCharacteristics>
+    </userTask>
+    <sequenceFlow id="flow3" name="Pass" sourceRef="exclusivegateway1" targetRef="exclusivegateway3">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${result=="Y"}]]></conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endevent1" name="End">
+      <extensionElements>
+        <activiti:executionListener event="start" expression="${BPMService.log('approve end')}"></activiti:executionListener>
+        <activiti:executionListener event="start" expression="${donation.setStatus(&quot;1&quot;)}"></activiti:executionListener>
+      </extensionElements>
+    </endEvent>
+    <exclusiveGateway id="exclusivegateway1" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow5" sourceRef="Approve" targetRef="exclusivegateway1"></sequenceFlow>
+    <sequenceFlow id="flow6" name="Reject" sourceRef="exclusivegateway1" targetRef="mailtask1">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${BPMService.log('approve reject email')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${result!="Y"}]]></conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endevent2" name="End">
+      <extensionElements>
+        <activiti:executionListener event="start" expression="${donation.setStatus(&quot;2&quot;)}"></activiti:executionListener>
+        <activiti:executionListener event="start" expression="${BPMService.log('reject end')}"></activiti:executionListener>
+      </extensionElements>
+    </endEvent>
+    <sequenceFlow id="flow7" sourceRef="mailtask1" targetRef="endevent2"></sequenceFlow>
+    <serviceTask id="mailtask1" name="Mail Task" activiti:type="mail">
+      <extensionElements>
+        <activiti:field name="to">
+          <activiti:expression><![CDATA[${donation.name}@sample.com]]></activiti:expression>
+        </activiti:field>
+        <activiti:field name="from">
+          <activiti:string><![CDATA[admin@sample.com]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="subject">
+          <activiti:string><![CDATA[Reject Donaton]]></activiti:string>
+        </activiti:field>
+        <activiti:field name="text">
+          <activiti:expression><![CDATA[Hi ${donation.name},
+
+Reject email to you. 
+
+From ${donation.approver}]]></activiti:expression>
+        </activiti:field>
+      </extensionElements>
+    </serviceTask>
+    <exclusiveGateway id="exclusivegateway2" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow8" sourceRef="Second" targetRef="exclusivegateway2"></sequenceFlow>
+    <sequenceFlow id="flow9" name="Pass" sourceRef="exclusivegateway2" targetRef="servicetask1">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${BPMService.log('service task')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${result=="Y"}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow10" name="Reject" sourceRef="exclusivegateway2" targetRef="mailtask1">
+      <extensionElements>
+        <activiti:executionListener event="take" expression="${BPMService.log('email')}"></activiti:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${result!="Y"}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask id="servicetask1" name="Service Task" activiti:expression="${BPMService.log('send complate email')}"></serviceTask>
+    <sequenceFlow id="flow11" sourceRef="servicetask1" targetRef="endevent1"></sequenceFlow>
+    <exclusiveGateway id="exclusivegateway3" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow12" name="&gt;=1000" sourceRef="exclusivegateway3" targetRef="Second">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${donation.amt>=1000}]]></conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endevent3" name="End">
+      <extensionElements>
+        <activiti:executionListener event="start" expression="${donation.setStatus(&quot;1&quot;)}"></activiti:executionListener>
+        <activiti:executionListener event="start" expression="${BPMService.log('approve &lt;1000 end')}"></activiti:executionListener>
+      </extensionElements>
+    </endEvent>
+    <sequenceFlow id="flow13" name="&lt;1000" sourceRef="exclusivegateway3" targetRef="endevent3">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${donation.amt<1000}]]></conditionExpression>
+    </sequenceFlow>
+    <startEvent id="loginmessagestart" name="Message start">
+      <messageEventDefinition messageRef="login"></messageEventDefinition>
+    </startEvent>
+    <sequenceFlow id="flow14" sourceRef="loginmessagestart" targetRef="scripttask1"></sequenceFlow>
+    <scriptTask id="scripttask1" name="Say hello" scriptFormat="javascript" activiti:autoStoreVariables="false">
+      <script>var username = user.getName();
+BPMService.log("login message is coming!" + username);</script>
+    </scriptTask>
+    <endEvent id="endevent4" name="End"></endEvent>
+    <sequenceFlow id="flow15" sourceRef="scripttask1" targetRef="endevent4"></sequenceFlow>
+    <dataObject id="result" name="result" itemSubjectRef="xsd:string"></dataObject>
+    <textAnnotation id="textannotation1">
+      <text>AMT &gt;= 1000</text>
+    </textAnnotation>
+    <association id="association1" sourceRef="textannotation1" targetRef="exclusivegateway3"></association>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_donation">
+    <bpmndi:BPMNPlane bpmnElement="donation" id="BPMNPlane_donation">
+      <bpmndi:BPMNShape bpmnElement="start1" id="BPMNShape_start1">
+        <omgdc:Bounds height="35.0" width="35.0" x="10.0" y="120.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Donation" id="BPMNShape_Donation">
+        <omgdc:Bounds height="55.0" width="105.0" x="70.0" y="110.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Approve" id="BPMNShape_Approve">
+        <omgdc:Bounds height="55.0" width="105.0" x="200.0" y="110.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Second" id="BPMNShape_Second">
+        <omgdc:Bounds height="55.0" width="105.0" x="541.0" y="110.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent1" id="BPMNShape_endevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="930.0" y="120.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway1" id="BPMNShape_exclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="320.0" y="117.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent2" id="BPMNShape_endevent2">
+        <omgdc:Bounds height="35.0" width="35.0" x="596.0" y="284.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="mailtask1" id="BPMNShape_mailtask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="415.0" y="274.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway2" id="BPMNShape_exclusivegateway2">
+        <omgdc:Bounds height="40.0" width="40.0" x="690.0" y="117.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="servicetask1" id="BPMNShape_servicetask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="790.0" y="110.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway3" id="BPMNShape_exclusivegateway3">
+        <omgdc:Bounds height="40.0" width="40.0" x="426.0" y="117.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent3" id="BPMNShape_endevent3">
+        <omgdc:Bounds height="35.0" width="35.0" x="480.0" y="181.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="loginmessagestart" id="BPMNShape_loginmessagestart">
+        <omgdc:Bounds height="35.0" width="35.0" x="44.0" y="294.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask1" id="BPMNShape_scripttask1">
+        <omgdc:Bounds height="55.0" width="105.0" x="124.0" y="284.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="endevent4" id="BPMNShape_endevent4">
+        <omgdc:Bounds height="35.0" width="35.0" x="274.0" y="294.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="textannotation1" id="BPMNShape_textannotation1">
+        <omgdc:Bounds height="50.0" width="100.0" x="480.0" y="40.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+        <omgdi:waypoint x="45.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="70.0" y="137.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="175.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="200.0" y="137.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+        <omgdi:waypoint x="360.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="426.0" y="137.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="24.0" x="359.0" y="140.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="305.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="320.0" y="137.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="340.0" y="157.0"></omgdi:waypoint>
+        <omgdi:waypoint x="340.0" y="252.0"></omgdi:waypoint>
+        <omgdi:waypoint x="340.0" y="301.0"></omgdi:waypoint>
+        <omgdi:waypoint x="415.0" y="301.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="30.0" x="306.0" y="191.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="520.0" y="301.0"></omgdi:waypoint>
+        <omgdi:waypoint x="596.0" y="301.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow8" id="BPMNEdge_flow8">
+        <omgdi:waypoint x="646.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="690.0" y="137.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow9" id="BPMNEdge_flow9">
+        <omgdi:waypoint x="730.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="790.0" y="137.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="24.0" x="743.0" y="137.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow10" id="BPMNEdge_flow10">
+        <omgdi:waypoint x="710.0" y="157.0"></omgdi:waypoint>
+        <omgdi:waypoint x="467.0" y="274.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="30.0" x="651.0" y="187.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow11" id="BPMNEdge_flow11">
+        <omgdi:waypoint x="895.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="930.0" y="137.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow12" id="BPMNEdge_flow12">
+        <omgdi:waypoint x="466.0" y="137.0"></omgdi:waypoint>
+        <omgdi:waypoint x="541.0" y="137.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="36.0" x="466.0" y="137.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow13" id="BPMNEdge_flow13">
+        <omgdi:waypoint x="446.0" y="157.0"></omgdi:waypoint>
+        <omgdi:waypoint x="445.0" y="198.0"></omgdi:waypoint>
+        <omgdi:waypoint x="480.0" y="198.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="14.0" width="30.0" x="416.0" y="163.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow14" id="BPMNEdge_flow14">
+        <omgdi:waypoint x="79.0" y="311.0"></omgdi:waypoint>
+        <omgdi:waypoint x="124.0" y="311.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow15" id="BPMNEdge_flow15">
+        <omgdi:waypoint x="229.0" y="311.0"></omgdi:waypoint>
+        <omgdi:waypoint x="274.0" y="311.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="association1" id="BPMNEdge_association1">
+        <omgdi:waypoint x="480.0" y="65.0"></omgdi:waypoint>
+        <omgdi:waypoint x="445.0" y="65.0"></omgdi:waypoint>
+        <omgdi:waypoint x="446.0" y="117.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

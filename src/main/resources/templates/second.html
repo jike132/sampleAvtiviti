@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Second Approve Form</title>
+</head>
+<body>
+	<h1 layout:fragment="header">Second Approve Form</h1>
+	<div layout:fragment="content" class="container">
+		<hr/>
+		<div class="pull-right">
+			<a th:href="@{/mvc/list}" href="list.html"> Task List </a>
+		</div>
+		
+		<h2>Info:</h2>
+		<div th:object="${donation}">
+			<p><b>Id:</b> <span th:text="*{id}">1</span></p>
+      		<p><b>Name:</b> <span th:text="*{name}">user name</span></p>
+      		<p><b>Amt:</b> <span th:text="*{amt}">1.00</span></p>
+      		<p><b>Date:</b> <span th:text="*{#dates.format(date?:#dates.createNow(),'yyyy-MM-dd')}">2011-02-01</span></p>
+      		<p><b>Approver:</b> <span th:text="*{approver}">approver</span></p>
+      		<p><b>Dept:</b> <span th:text="*{dept}">dept</span></p>
+    	</div>
+    	
+    	<hr/>
+    	
+    	<h2>Second Form:</h2>
+		<form id="secondForm" th:action="@{/mvc/processSecond}" th:object="${approveBean}"
+			action="#" method="post">
+			<div th:if="${#fields.hasErrors('*')}" class="alert alert-error">
+				<p th:each="error : ${#fields.errors('*')}" th:text="${error}">
+					Validation error</p>
+			</div>
+			<label for="text">Approve ?</label>
+			<input id="result" type="radio" th:field="*{result}" value="Y"
+			  th:class="${#fields.hasErrors('result')} ? 'field-error'" />Approve 
+			<input id="result" type="radio" th:field="*{result}" value="N"
+			  th:class="${#fields.hasErrors('result')} ? 'field-error'" />Reject
+			
+			<div class="form-actions">
+				<input type="submit" value="Submit" />
+			</div>
+		</form>
+	</div>
+</body>
+</html>
